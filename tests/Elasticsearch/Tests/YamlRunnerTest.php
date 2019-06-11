@@ -605,7 +605,7 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
         switch ($testName) {
             case 'docvalue_fields with explicit format':
                 if (is_array($match)) {
-                    foreach($match as $k => $v) {
+                    foreach ($match as $k => $v) {
                         $match[$k] = is_string($v) ? trim($v) : $v;
                     }
                 }
