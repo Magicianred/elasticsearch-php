@@ -435,18 +435,14 @@ class ClientBuilder
 
             // Make sure we are setting Content-Type and Accept (unless the user has explicitly
             // overridden it
-            if (isset($this->connectionParams['client']['headers']) === false) {
-                $this->connectionParams['client']['headers'] = [
-                    'Content-Type' => ['application/json'],
-                    'Accept' => ['application/json']
-                ];
-            } else {
-                if (isset($this->connectionParams['client']['headers']['Content-Type']) === false) {
-                    $this->connectionParams['client']['headers']['Content-Type'] = ['application/json'];
-                }
-                if (isset($this->connectionParams['client']['headers']['Accept']) === false) {
-                    $this->connectionParams['client']['headers']['Accept'] = ['application/json'];
-                }
+            if (! isset($this->connectionParams['client']['headers'])) {
+                $this->connectionParams['client']['headers'] = [];
+            }
+            if (! isset($this->connectionParams['client']['headers']['Content-Type'])) {
+                $this->connectionParams['client']['headers']['Content-Type'] = ['application/json'];
+            }
+            if (! isset($this->connectionParams['client']['headers']['Accept'])) {
+                $this->connectionParams['client']['headers']['Accept'] = ['application/json'];
             }
 
             $this->connectionFactory = new ConnectionFactory($this->handler, $this->connectionParams, $this->serializer, $this->logger, $this->tracer);

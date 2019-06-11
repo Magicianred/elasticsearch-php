@@ -128,7 +128,7 @@ class Connection implements ConnectionInterface
             $connectionParams['client']['curl'][CURLOPT_USERPWD] = $hostDetails['user'].':'.$hostDetails['pass'];
         }
 
-        if (isset($connectionParams['client']['headers']) === true) {
+        if (isset($connectionParams['client']['headers'])) {
             $this->headers = $connectionParams['client']['headers'];
             unset($connectionParams['client']['headers']);
         }
@@ -161,6 +161,10 @@ class Connection implements ConnectionInterface
     {
         if ($body !== null) {
             $body = $this->serializer->serialize($body);
+        }
+
+        if (isset($options['client']['headers']) && is_array($options['client']['headers'])) {
+            $this->headers = array_merge($this->headers, $options['client']['headers']);
         }
 
         $request = [
@@ -285,10 +289,15 @@ class Connection implements ConnectionInterface
                         }
 
                         if ($response['status'] >= 400 && $response['status'] < 500) {
-                            $ignore = isset($request['client']['ignore']) ? $request['client']['ignore'] : [];
+                            $ignore = $request['client']['ignore'] ?? [];
+                            // Skip 404 if succeeded true in the body (e.g. clear_scroll)
+                            $body = $response['body'] ?? '';
+                            if (strpos($body, '"succeeded":true') !== false) {
+                                 $ignore[] = 404;
+                            }
                             $this->process4xxError($request, $response, $ignore);
                         } elseif ($response['status'] >= 500) {
-                            $ignore = isset($request['client']['ignore']) ? $request['client']['ignore'] : [];
+                            $ignore = $request['client']['ignore'] ?? [];
                             $this->process5xxError($request, $response, $ignore);
                         }
 

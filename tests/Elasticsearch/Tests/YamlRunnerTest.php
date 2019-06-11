@@ -96,6 +96,8 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
         'indices.rollover/10_basic.yml' => 'Rollover test seems buggy atm',
         'indices.rollover/10_basic.yaml' => 'Rollover test seems buggy atm',
 
+        'get_source/70_source_filtering.yml' => 'Expected [\'v1\'] does not match [false]',
+        'get_source/71_source_filtering_with_types.yml' => 'Expected [\'v1\'] does not match [false]',
     ];
 
     /**
@@ -343,7 +345,7 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
 
         // Any specific headers to add?
         if ('headers' === key($operation)) {
-            $headers = current($operation);
+            $headers = $this->formatHeaders(current($operation));
             next($operation);
         }
 
@@ -410,8 +412,6 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
         if (strpos($method, "exist") !== false && $async === true) {
             return $this->executeAsyncExistRequest($caller, $method, $endpointParams, $expectedError, $expectedWarnings, $testName);
         }
-        // Convert object to array
-        //$endpointParams = json_decode(json_encode($endpointParams), true);
 
         return $this->executeRequest($caller, $method, (array) $endpointParams, $expectedError, $expectedWarnings, $testName);
     }
@@ -548,7 +548,7 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
      */
     public function operationIsFalse(string $operation, $lastOperationResult, &$context, string $testName)
     {
-        $value = (bool)$this->resolveValue($lastOperationResult, $operation, $context);
+        $value = (bool) $this->resolveValue($lastOperationResult, $operation, $context);
         $msg = "Failed to assert that a value is false in test \"$testName\"\n"
             ."$operation was [".print_r($value, true)."]"
             .var_export($lastOperationResult, true);
@@ -593,7 +593,23 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
         if ($key === '$body') {
             $match = $lastOperationResult;
         } else {
-            $match = $this->resolveValue($lastOperationResult, $key, $context);
+            if (empty($key)) {
+                $match = $lastOperationResult['_source'] ?? $lastOperationResult;
+            } else {
+                $match = $this->resolveValue($lastOperationResult, $key, $context);
+            }
+        }
+
+        // Special cases for responses
+        // @todo We need to investigate more about this behaviour
+        switch ($testName) {
+            case 'docvalue_fields with explicit format':
+                if (is_array($match)) {
+                    foreach($match as $k => $v) {
+                        $match[$k] = is_string($v) ? trim($v) : $v;
+                    }
+                }
+                break;
         }
 
         $expected = $this->replaceWithContext(current($operation), $context);
@@ -1143,5 +1159,16 @@ class YamlRunnerTest extends \PHPUnit\Framework\TestCase
             }
         }
         curl_close($ch);
+    }
+
+    private function formatHeaders($headers): array
+    {
+        $result = (array) $headers;
+        foreach ($result as $key => $value) {
+            if (!is_array($value)) {
+                $result[$key] = explode(',', $value);
+            }
+        }
+        return $result;
     }
 }

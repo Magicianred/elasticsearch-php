@@ -17,4 +17,4 @@ docker run \
   --name=elasticsearch-oss \
   --detach \
   docker.elastic.co/elasticsearch/elasticsearch-oss:${ES_VERSION}
-#docker run --network esnet-oss --rm appropriate/curl --max-time 120 --retry 120 --retry-delay 1 --retry-connrefused --show-error --silent http://elasticsearch-oss:9200
+docker run --network esnet-oss --rm appropriate/curl --max-time 120 --retry 120 --retry-delay 1 --retry-connrefused --show-error --silent http://elasticsearch-oss:9200
