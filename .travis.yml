@@ -41,7 +41,9 @@ before_script:
 
 script:
   - if [ $TRAVIS_PHP_VERSION != '7.3' ]; then composer run-script phpcs; fi
-  - if [ $TRAVIS_PHP_VERSION = '7.1' || $TRAVIS_PHP_VERSION = '7.2' ]; then composer run-script phpstan7.1; else composer run-script phpstan; fi
+  - if [ $TRAVIS_PHP_VERSION = '7.1' ]; then composer run-script phpstan7.1; fi
+  - if [ $TRAVIS_PHP_VERSION = '7.2' ]; then composer run-script phpstan7.1; fi
+  - if [ $TRAVIS_PHP_VERSION = '7.3' ]; then composer run-script phpstan; fi
   - vendor/bin/phpunit $PHPUNIT_FLAGS
   - vendor/bin/phpunit -c phpunit-integration.xml --group sync $PHPUNIT_FLAGS
 
