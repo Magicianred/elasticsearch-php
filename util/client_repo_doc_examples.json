@@ -1,0 +1,27 @@
+{
+    "elasticsearch-php" : {
+        "url" : "https://github.com/elastic/elasticsearch-php",
+        "branch" : "master",
+        "examples" : "docs/examples"
+    },
+    "elasticsearch-js" : {
+        "url" : "https://github.com/elastic/elasticsearch-js",
+        "branch" : "master",
+        "examples" : "docs/doc_examples"
+    },
+    "go-elasticsearch" : {
+        "url" : "https://github.com/elastic/go-elasticsearch",
+        "branch" : "doc_examples",
+        "examples" : ".doc/examples/doc"
+    },
+    "elasticsearch-ruby" : {
+        "url": "https://github.com/elastic/elasticsearch-ruby",
+        "branch" : "master",
+        "examples" : "examples/docs/asciidoc"
+    },
+    "elasticsearch-net" : {
+        "url": "https://github.com/elastic/elasticsearch-net",
+        "branch" : "master",
+        "examples" : "examples"
+    }
+}

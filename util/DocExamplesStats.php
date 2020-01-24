@@ -1,6 +1,10 @@
 <?php
 /**
- * Generate the doc examples
+ * Generate statistics about the doc examples for Elasticsearch
+ * 
+ * It can be used to answer questions like:
+ * - Which examples are missing from the X client?
+ * - Do X client has some outdated examples?
  *
  * @author Enrico Zimuel (enrico.zimuel@elastic.co)
  */
@@ -10,7 +14,11 @@ use GitWrapper\GitWrapper;
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-$fileToParse = require 'examples_to_parse.php';
+$alternativeReport  = 'https://raw.githubusercontent.com/elastic/built-docs/master/raw/en/elasticsearch/reference/master/alternatives_report.json';
+$examplesToParse    = 'examples_to_parse.json';
+$clientRepositories = 'client_repo_doc_examples.json';
+
+$fileToParse = json_decode(file_get_contents($examplesToParse), true);
 if (empty($fileToParse)) {
     die('There are no code example to convert, please check the file "examples_to_parse.php"');
 }
@@ -40,35 +48,17 @@ foreach ($lines as $line) {
 printf ("Total number of examples    : %d\n", count($hash));
 printf ("#examples from the whitelist: %d\n", count($hashToParse));
 
-$clients = [
-    'elasticsearch-php' => [
-        'url' => 'https://github.com/elastic/elasticsearch-php',
-        'branch' => 'master',
-        'examples' => 'docs/examples'
-    ],
-    'elasticsearch-js' => [
-        'url' => 'https://github.com/elastic/elasticsearch-js',
-        'branch' => 'master',
-        'examples' => 'docs/doc_examples'
-    ],
-    'go-elasticsearch' => [
-        'url' => 'https://github.com/elastic/go-elasticsearch',
-        'branch' => 'doc_examples',
-        'examples' => '.doc/examples/doc'
-    ],
-    'elasticsearch-ruby' => [
-        'url' => 'https://github.com/elastic/elasticsearch-ruby',
-        'branch' => 'master',
-        'examples' => 'examples/docs/asciidoc'
-    ]
-];
+if (!file_exists($clientRepositories)) {
+    die(sprintf("The %s file does not exist", $clientRepositories));
+}
+$clients = json_decode(file_get_contents($clientRepositories), true);
 
 $langs = [];
 $gitWrapper = new GitWrapper();
 foreach ($clients as $lang => $repo) {
     printf ("\n---\nAnalyzing %s github repository\n---\n", $lang);
     $hashInRepo = [];
-    $tmpDir = sprintf("/tmp/%s", $lang);
+    $tmpDir = sprintf("%s/%s", sys_get_temp_dir(), $lang);
     if (file_exists($tmpDir)) {
         $git = $gitWrapper->workingCopy($tmpDir);
         $git->fetchAll();
@@ -76,11 +66,9 @@ foreach ($clients as $lang => $repo) {
         $git = $gitWrapper->cloneRepository($repo['url'], $tmpDir);
     }
     $git->run('checkout', [$repo['branch']]);
-    $result = $git->run(
-        'ls-files',
-        [$repo['examples']]
-    );
-    $files = explode("\n", $result);
+
+    ## Get the list of .asciidoc files
+    $files = getAsciiDocFiles(sprintf("%s/%s", $tmpDir, $repo['examples']));
     foreach ($files as $f) {
         if (empty($f)) {
             continue;
@@ -120,4 +108,16 @@ foreach ($clients as $lang => $repo) {
             printf("\t%s\n", $h);
         }
     }
+}
+
+/**
+ * Return all the .asciidoc file starting from a path, including the subfolders
+ */
+function getAsciiDocFiles(string $path): array
+{
+    $result = glob(sprintf("%s/*.asciidoc", $path));
+    foreach (glob(sprintf("%s/*", $path), GLOB_ONLYDIR) as $dir) {
+        $result = array_merge($result, getAsciiDocFiles($dir));
+    }
+    return $result;
 }
